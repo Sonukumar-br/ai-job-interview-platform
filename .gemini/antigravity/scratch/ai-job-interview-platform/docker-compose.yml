@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # 1. Production MySQL Database Container
+  mysqldb:
+    image: mysql:8.0
+    container_name: mysql_ai_job_prep
+    restart: always
+    environment:
+      MYSQL_DATABASE: ai_job_prep
+      MYSQL_ROOT_PASSWORD: root_password_change_in_prod
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  # 2. Java 21 Spring Boot Backend API Container
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: spring_ai_job_prep_backend
+    restart: always
+    depends_on:
+      - mysqldb
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: 8080
+      DATABASE_URL: jdbc:mysql://mysqldb:3306/ai_job_prep?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DATABASE_USERNAME: root
+      DATABASE_PASSWORD: root_password_change_in_prod
+      JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      FRONTEND_URL: http://localhost:5173,http://localhost:3000
+
+volumes:
+  mysql_data:
